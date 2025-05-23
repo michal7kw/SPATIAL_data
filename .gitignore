@@ -7,3 +7,4 @@ region_R1/
 *.hdf5
 Archive/
 DEGs/
+*.html
