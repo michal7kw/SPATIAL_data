@@ -1,2 +1,7 @@
 region_R1/
 .DS_Store
+*.h5ad
+*.vzg2
+*.parquet
+*.csv
+*.hdf5
