@@ -5,3 +5,5 @@ region_R1/
 *.parquet
 *.csv
 *.hdf5
+Archive/
+DEGs/
