@@ -1,25 +1,5 @@
 # %% [markdown]
 # # Vizgen MERSCOPE Vizualizer Cell Clustering
-# 
-# This notebook demonstrates how to use Scanpy to perform data pre-processing, dimensionality reduction, and single-cell Leiden clustering.
-# 
-# This notebook is designed to take the Anndata output from the MERSCOPE Vizualizer and return a new Anndata object with UMAP dimensionality reduction and Leiden clustering cell metadata.
-# 
-# Before running this notebook upload your data (using the Files tab on the left and upload button) to this Colab notebook (a specific filename is not required, but the file must end with `.hdf5`).
-# 
-# 
-
-# %%
-# %%capture
-# !pip install -q numpy>=1.21
-# !pip install -q fsspec
-# !pip install -q gcsfs
-# !pip install -q scanpy>=1.9.3
-# !pip install -q anndata>=0.9.0
-# !pip install -q leidenalg
-# !pip install -q observable-jupyter
-# !pip install -q clustergrammer2
-# !pip install -q loompy
 
 # %%
 import os
@@ -40,101 +20,28 @@ from glob import glob
 # Suppress FutureWarning messages
 warnings.filterwarnings('ignore', category=FutureWarning)
 
-# Set plotting style
-plt.style.use('seaborn-v0_8-whitegrid')
-sc.settings.set_figure_params(dpi=100, frameon=True, figsize=(6, 6), facecolor='white')
-
-# code for compressing data for visuals
-# import zlib, json, base64
-# def json_zip(j):
-#     zip_json_string = base64.b64encode(
-#         zlib.compress(
-#             json.dumps(j).encode('utf-8')
-#         )
-#     ).decode('ascii')
-#     return zip_json_string
-
-# Avoids scroll-in-the-scroll in the entire Notebook
-# from IPython.display import Javascript
-# def resize_colab_cell():
-#   display(Javascript('google.colab.output.setIframeHeight(0, true, {maxHeight: 5000})'))
-# get_ipython().events.register('pre_run_cell', resize_colab_cell)
-
 # %% [markdown]
 # # Load Anndata
 
 # %%
 # Define file paths
-base_path = 'region_R1/' # Ensure this path is correct relative to the notebook location
-h5ad_file = os.path.join(base_path, '202503071102_SESSA-p30-E165_VMSC10702_region_R1.h5ad')
+select_region = "4"
+base_path = f'202504111150_Sessa-p0-p7_VMSC10702/R{select_region}'
+h5ad_file = os.path.join(base_path, f'202504111150_Sessa-p0-p7_VMSC10702_region_R{select_region}.h5ad')
 print(h5ad_file)
 
-# Attempt to load the .h5ad file (same approach as region_R1_analysis.py)
-ad_viz = None
-try:
-    ad_viz = sc.read_h5ad(h5ad_file)
-    print(f"Successfully loaded AnnData file: {h5ad_file}")
-    print(ad_viz)
-except FileNotFoundError:
-    print(f"AnnData file not found: {h5ad_file}. Will attempt to load individual files.")
-except Exception as e:
-    print(f"Error loading AnnData file {h5ad_file}: {e}. Will attempt to load individual files.")
-
-# Fallback to CSV loading if h5ad failed (same as region_R1_analysis.py)
-if ad_viz is None:
-    print("\nAttempting to load data from individual CSV files...")
-    cell_by_gene_file = os.path.join(base_path, 'cell_by_gene.csv')
-    cell_metadata_file = os.path.join(base_path, 'cell_metadata.csv')
-    
-    try:
-        # Load gene expression data
-        counts_df = pd.read_csv(cell_by_gene_file, index_col=0)
-        print(f"Loaded {cell_by_gene_file}: {counts_df.shape[0]} cells, {counts_df.shape[1]} genes")
-        
-        # Load cell metadata
-        metadata_df = pd.read_csv(cell_metadata_file, index_col=0)
-        print(f"Loaded {cell_metadata_file}: {metadata_df.shape[0]} cells, {metadata_df.shape[1]} metadata columns")
-        
-        # Align indices (important!)
-        common_cells = counts_df.index.intersection(metadata_df.index)
-        counts_df = counts_df.loc[common_cells]
-        metadata_df = metadata_df.loc[common_cells]
-        print(f"Found {len(common_cells)} common cells between counts and metadata.")
-
-        if len(common_cells) == 0:
-            raise ValueError("No common cells found between cell_by_gene.csv and cell_metadata.csv. Cannot create AnnData object.")
-
-        # Create AnnData object
-        ad_viz = ad.AnnData(X=counts_df.values, obs=metadata_df, var=pd.DataFrame(index=counts_df.columns))
-        ad_viz.X = ad_viz.X.astype('float32')  # Ensure X is float for scanpy operations
-        print("Successfully created AnnData object from CSV files.")
-        print(ad_viz)
-        
-    except FileNotFoundError as e:
-        print(f"Error: A required CSV file was not found: {e}. Cannot proceed with analysis.")
-        raise
-    except ValueError as e:
-        print(f"Error creating AnnData object: {e}")
-        raise
-    except Exception as e:
-        print(f"An unexpected error occurred while loading CSV files: {e}")
-        raise
+# Load the .h5ad file
+ad_viz = sc.read_h5ad(h5ad_file)
+print(f"Successfully loaded AnnData file: {h5ad_file}")
+print(ad_viz)
 
 # %%
-
-
 # filter out blanks before clusering
 keep_genes = [x for x in ad_viz.var.index.tolist() if 'Blank' not in x]
 ad_viz = ad_viz[:, keep_genes]
-
-# copy to cell_by_gene_matrix
-cell_by_gene = deepcopy(ad_viz.to_df())
+cell_by_gene = deepcopy(ad_viz.to_df()) # copy to cell_by_gene_matrix
 
 ad_viz
-
-
-# %%
-# ad_viz.__dict__['_raw'].__dict__['_var'] = ad_viz.__dict__['_raw'].__dict__['_var'].rename(columns={'_index': 'features'})
 
 # %% [markdown]
 # ### Filter Cells Based on Minimum Gene Expression Counts
@@ -232,8 +139,5 @@ ad_viz
 clustered_filename = h5ad_file.replace('.h5ad', '_clustered.h5ad')
 ad_viz.write_h5ad(clustered_filename)
 print(f"Saved clustered data to: {clustered_filename}")
-
-# %%
-
 
 

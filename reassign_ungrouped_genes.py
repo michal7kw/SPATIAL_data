@@ -8,18 +8,28 @@ import os
 import glob
 from collections import defaultdict
 
+DEG_PATH = "DEGs/DEGs_mapmycells_first_layerFC_0_25/biomarkers/sig_deg_lists"
+CELL_TYPES = ['Astrocytes', 'Ependymal', 'ExN', 'GABA', 'Immune', 'Oligo', 'Vascular']
+
+# UNGROUPED_GENES_FILE = 'p30/ungrouped.csv'
+# GROUPED_GENES_FILE = 'p30/grouped.csv'
+
+UNGROUPED_GENES_FILE = 'p0/ungrouped.csv'
+GROUPED_GENES_FILE = 'p0/grouped.csv'
+
+
 def read_ungrouped_genes():
     """Read the ungrouped.csv file and return a list of gene names."""
-    df = pd.read_csv('ungrouped.csv', header=None, names=['group', 'gene', 'col3', 'color'])
+    df = pd.read_csv(UNGROUPED_GENES_FILE, header=None, names=['group', 'gene', 'col3', 'color'])
     return df
 
 def find_genes_in_deg_files():
     """Search for ungrouped genes in all _up_significant.csv files."""
     # Path to the DEG files
-    deg_path = "DEGs/DEGs_mapmycells_first_layerFC_0_25/biomarkers/sig_deg_lists"
+    deg_path = DEG_PATH
     
     # Get all cell type directories
-    cell_types = ['Astrocytes', 'Ependymal', 'ExN', 'GABA', 'Immune', 'Oligo', 'Vascular']
+    cell_types = CELL_TYPES
     
     # Dictionary to store gene -> cell_types mapping
     gene_assignments = defaultdict(list)
@@ -84,7 +94,7 @@ def create_reassigned_csv(gene_assignments, ungrouped_df):
     new_df = pd.DataFrame(new_rows)
     
     # Save to new file
-    output_file = 'ungrouped_reassigned.csv'
+    output_file = GROUPED_GENES_FILE
     new_df.to_csv(output_file, header=False, index=False)
     
     print(f"\nReassigned CSV saved as: {output_file}")

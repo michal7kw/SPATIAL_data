@@ -235,13 +235,18 @@ def main():
 
 if __name__ == "__main__":
     # Example usage for the specific file mentioned
-    h5ad_file = 'region_R1/202503071102_SESSA-p30-E165_VMSC10702_region_R1.h5ad'
-    # h5ad_file = 'region_R2/202503071102_SESSA-p30-E165_VMSC10702_region_R2.h5ad'
-    # h5ad_file = 'region_R3/202503071102_SESSA-p30-E165_VMSC10702_region_R3.h5ad'
-    # h5ad_file = 'region_R4/202503071102_SESSA-p30-E165_VMSC10702_region_R4.h5ad'
+    # h5ad_file = '202503071102_SESSA-p30-E165_VMSC10702/region_R1/202503071102_SESSA-p30-E165_VMSC10702_region_R1_clustered.h5ad'
+    # h5ad_file = '202503071102_SESSA-p30-E165_VMSC10702/region_R2/202503071102_SESSA-p30-E165_VMSC10702_region_R2_clustered.h5ad'
+    # h5ad_file = '202503071102_SESSA-p30-E165_VMSC10702/region_R3/202503071102_SESSA-p30-E165_VMSC10702_region_R3_clustered.h5ad'
+    # h5ad_file = '202503071102_SESSA-p30-E165_VMSC10702/region_R4/202503071102_SESSA-p30-E165_VMSC10702_region_R4_clustered.h5ad'
     
+    # h5ad_file = "202504111150_Sessa-p0-p7_VMSC10702/R4/202504111150_Sessa-p0-p7_VMSC10702_region_R1_clustered.h5ad"
+    # h5ad_file = "202504111150_Sessa-p0-p7_VMSC10702/R4/202504111150_Sessa-p0-p7_VMSC10702_region_R2_clustered.h5ad"
+    # h5ad_file = "202504111150_Sessa-p0-p7_VMSC10702/R4/202504111150_Sessa-p0-p7_VMSC10702_region_R3_clustered.h5ad"
+    h5ad_file = "202504111150_Sessa-p0-p7_VMSC10702/R4/202504111150_Sessa-p0-p7_VMSC10702_region_R4_clustered.h5ad"
+
     if os.path.exists(h5ad_file):
-        print("Converting the specified R3 file...")
+        print("Converting file...")
         convert_h5ad_to_hdf5(h5ad_file)
     else:
         print(f"File not found: {h5ad_file}")
