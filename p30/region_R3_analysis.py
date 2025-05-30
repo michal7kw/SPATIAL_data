@@ -1,8 +1,6 @@
 # %% [markdown]
 # # MERSCOPE Region R3 Analysis
 
-# %% [markdown]
-# This notebook performs an analysis of MERSCOPE data for region R1, focusing on data loading, exploratory data analysis (EDA), and visualization.
 
 # %%
 # Import necessary libraries
@@ -17,6 +15,7 @@ import numpy as np # For calculations if needed
 import os
 import squidpy
 import warnings
+from shapely import wkt
 
 # Suppress FutureWarning messages
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -26,35 +25,146 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 # sc.settings.set_figure_params(dpi=100, frameon=True, figsize=(6, 6), facecolor='white')
 
 # %%
+# Custom volcano plot for scanpy differential gene expression results
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
+
+def create_volcano_plot(adata, group_name, key='rank_genes_dge', 
+                       pval_threshold=0.05, logfc_threshold=0.5, 
+                       figsize=(8, 6), title=None, 
+                       show_gene_labels=False, top_genes=10):
+    """
+    Create a volcano plot from scanpy differential gene expression results.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Annotated data object with differential gene expression results
+    group_name : str
+        Name of the group to plot (must be in the DGE results)
+    key : str
+        Key in adata.uns containing the DGE results (default: 'rank_genes_dge')
+    pval_threshold : float
+        P-value threshold for significance (default: 0.05)
+    logfc_threshold : float
+        Log fold change threshold for significance (default: 0.5)
+    figsize : tuple
+        Figure size (default: (8, 6))
+    title : str
+        Plot title (if None, will be auto-generated)
+    show_gene_labels : bool
+        Whether to show gene labels for significant genes
+    top_genes : int
+        Number of top genes to label (if show_gene_labels=True)
+    """
+    
+    # Extract results for the specified group
+    try:
+        # Get the differential expression results
+        result_df = sc.get.rank_genes_groups_df(adata, group=group_name, key=key)
+    except:
+        print(f"Error: Could not find results for group '{group_name}' in key '{key}'")
+        print(f"Available groups: {list(adata.uns[key]['names'].dtype.names)}")
+        return
+    
+    # Prepare data for plotting
+    logfc = result_df['logfoldchanges'].values
+    pvals = result_df['pvals_adj'].values  # Use adjusted p-values
+    gene_names = result_df['names'].values
+    
+    # Convert p-values to -log10 scale
+    # Handle p-values of 0 by setting them to a very small number
+    pvals = np.where(pvals == 0, 1e-300, pvals)
+    neg_log_pvals = -np.log10(pvals)
+    
+    # Create significance categories
+    significant = (pvals < pval_threshold) & (np.abs(logfc) > logfc_threshold)
+    upregulated = significant & (logfc > logfc_threshold)
+    downregulated = significant & (logfc < -logfc_threshold)
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Plot non-significant genes
+    non_sig = ~significant
+    ax.scatter(logfc[non_sig], neg_log_pvals[non_sig], 
+              c='lightgray', alpha=0.6, s=20, label='Not significant')
+    
+    # Plot downregulated genes
+    if np.any(downregulated):
+        ax.scatter(logfc[downregulated], neg_log_pvals[downregulated], 
+                  c='blue', alpha=0.7, s=30, label='Downregulated')
+    
+    # Plot upregulated genes
+    if np.any(upregulated):
+        ax.scatter(logfc[upregulated], neg_log_pvals[upregulated], 
+                  c='red', alpha=0.7, s=30, label='Upregulated')
+    
+    # Add threshold lines
+    ax.axhline(y=-np.log10(pval_threshold), color='black', linestyle='--', alpha=0.5)
+    ax.axvline(x=logfc_threshold, color='black', linestyle='--', alpha=0.5)
+    ax.axvline(x=-logfc_threshold, color='black', linestyle='--', alpha=0.5)
+    
+    # Add gene labels if requested
+    if show_gene_labels and np.any(significant):
+        # Get top significant genes by p-value
+        sig_indices = np.where(significant)[0]
+        sig_pvals = neg_log_pvals[sig_indices]
+        top_indices = sig_indices[np.argsort(sig_pvals)[-top_genes:]]
+        
+        for idx in top_indices:
+            ax.annotate(gene_names[idx], 
+                       (logfc[idx], neg_log_pvals[idx]),
+                       xytext=(5, 5), textcoords='offset points',
+                       fontsize=8, alpha=0.8)
+    
+    # Customize the plot
+    ax.set_xlabel(f'Log2 Fold Change', fontsize=12)
+    ax.set_ylabel('-Log10 (Adjusted P-value)', fontsize=12)
+    
+    if title is None:
+        title = f'Volcano Plot: {group_name}'
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    
+    # Add legend
+    ax.legend(frameon=True, fancybox=True, shadow=True)
+    
+    # Add grid
+    ax.grid(True, alpha=0.3)
+    
+    # Print summary statistics
+    n_total = len(gene_names)
+    n_significant = np.sum(significant)
+    n_up = np.sum(upregulated)
+    n_down = np.sum(downregulated)
+    
+    print(f"Volcano plot summary for {group_name}:")
+    print(f"Total genes: {n_total}")
+    print(f"Significant genes: {n_significant} ({n_significant/n_total*100:.1f}%)")
+    print(f"Upregulated: {n_up}")
+    print(f"Downregulated: {n_down}")
+    
+    plt.tight_layout()
+    return fig, ax
+
+
+# %%
 # Define file paths
 base_path = '../202503071102_SESSA-p30-E165_VMSC10702/R3'
+h5ad_file = os.path.join(base_path, '202503071102_SESSA-p30-E165_VMSC10702_region_R3.h5ad')
+roi_csv_file_name = 'p30_R3_ROI_28-05-25_16-57_geometry.csv'
+roi_geometry_file_path = os.path.join(base_path, roi_csv_file_name)
 summary_image_file = os.path.join(base_path, 'summary.png')
+plot_enable = False
 
 # %% [markdown]
 # ## 1. Data Loading
-# 
-# We will prioritize loading the AnnData file (`.h5ad`) as it should contain the most comprehensive data. If needed, we will supplement with other files.
 
 # %%
-h5ad_file = os.path.join(base_path, '202503071102_SESSA-p30-E165_VMSC10702_region_R3.h5ad')
-
-# %%
-# Attempt to load the .h5ad file
-adata = None
-try:
-    adata = sc.read_h5ad(h5ad_file)
-    print(f"Successfully loaded AnnData file: {h5ad_file}")
-    print(adata)
-except FileNotFoundError:
-    print(f"AnnData file not found: {h5ad_file}. Will attempt to load individual files.")
-except Exception as e:
-    print(f"Error loading AnnData file {h5ad_file}: {e}. Will attempt to load individual files.")
-
-# %%
-print(adata.obs.index[:5])
-print(adata.obs.volume.head())
-print(adata.obs.center_x.head())
-print(adata.obs.leiden.head())
+# Load the .h5ad file
+adata = sc.read_h5ad(h5ad_file)
 
 # %%
 keep_genes = [x for x in adata.var.index.tolist() if 'Blank' not in x]
@@ -73,58 +183,7 @@ print(adata.shape[0])
 # adata
 
 # %%
-adata_v2 = adata.copy()
-
-# %% [markdown]
-# # 1b Supplementary files
-
-# %% [markdown]
-# ## Count data
-
-# %%
-cell_by_gene_file = os.path.join(base_path, 'cell_by_gene.csv')
-
-# %%
-# Load gene expression data
-counts_df = pd.read_csv(cell_by_gene_file, index_col=0) # Assuming first column is cell ID
-print(f"Loaded {cell_by_gene_file}: {counts_df.shape[0]} cells, {counts_df.shape[1]} genes")
-non_zero_values = counts_df.values[counts_df.values != 0]
-top_5_values = sorted(non_zero_values, reverse=True)[:5]
-print("Top 5 non-zero values:", top_5_values)
-
-# %% [markdown]
-# ## Metadata
-
-# %%
-cell_metadata_file = os.path.join(base_path, 'cell_metadata.csv')
-
-# %%
-# Load cell metadata
-metadata_df = pd.read_csv(cell_metadata_file, index_col=0) # Assuming first column is cell ID
-print(f"Loaded {cell_metadata_file}: {metadata_df.shape[0]} cells, {metadata_df.shape[1]} metadata columns")
-metadata_df.head()
-
-# %%
-# Align indices (important!)
-common_cells = counts_df.index.intersection(metadata_df.index)
-counts_df = counts_df.loc[common_cells]
-metadata_df = metadata_df.loc[common_cells]
-print(f"Found {len(common_cells)} common cells between counts and metadata.")
-
-if len(common_cells) == 0:
-    raise ValueError("No common cells found between cell_by_gene.csv and cell_metadata.csv. Cannot create AnnData object.")
-
-# %%
-# Create AnnData object
-# adata = ad.AnnData(X=counts_df.values, obs=metadata_df, var=pd.DataFrame(index=counts_df.columns))
-# adata.X = adata.X.astype('float32') # Ensure X is float for scanpy operations
-# print("Successfully created AnnData object from CSV files.")
-# print(adata)
-
-# %% [markdown]
-# ### Cell boundaries
-
-# %%
+# Cell boundaries
 cell_boundaries_file = os.path.join(base_path, 'cell_boundaries.parquet')
 cell_boundaries_gdf = None
 
@@ -140,639 +199,230 @@ cell_boundaries_gdf = cell_boundaries_gdf.set_index('EntityID', drop=False)
 cell_boundaries_gdf.head()
 
 # %% [markdown]
-# # Section added: Subselect cells based on ROI polygons from CSV
+# # Subselect cells based on ROI polygons from CSV
 # 
 # This section loads ROI polygons from a CSV file, converts them to geometries,
 # and then selects cells from `cell_boundaries_gdf` that fall within these ROIs.
 
 # %%
-# Define ROI geometry file path
-# The base_path is defined earlier in the script.
-# The ROI CSV file is '202503071102_SESSA-p30-E165_VMSC10702/R3/p30_R3_ROI_28-05-25_16-57_geometry.csv'
-roi_csv_file_name = 'p30_R3_ROI_28-05-25_16-57_geometry.csv'
-roi_geometry_file_path = os.path.join(base_path, roi_csv_file_name)
-print(f"Attempting to load ROI geometry CSV from: {roi_geometry_file_path}")
-
-# %%
 # Load ROI geometry data from CSV
-roi_polygons_df = None
-try:
-    roi_polygons_df = pd.read_csv(roi_geometry_file_path)
-    print(f"Successfully loaded ROI geometry file: {roi_geometry_file_path}")
-    print("ROI CSV Head:")
-    print(roi_polygons_df.head())
-except FileNotFoundError:
-    print(f"ROI geometry file not found: {roi_geometry_file_path}. Please check the path and file name.")
-    # Optionally, raise an error or handle appropriately if the file is critical
-except Exception as e:
-    print(f"Error loading ROI geometry file {roi_geometry_file_path}: {e}")
+roi_polygons_df = pd.read_csv(roi_geometry_file_path)
+print(f"Successfully loaded ROI geometry file: {roi_geometry_file_path}")
+print("ROI CSV Head:")
+print(roi_polygons_df.head())
 
 # %%
 # Process ROI geometries and perform spatial selection
-if roi_polygons_df is not None and not roi_polygons_df.empty:
-    try:
-        # Import shapely.wkt if not already imported (standard practice is to have imports at the top of the script)
-        from shapely import wkt
-        
-        # Convert WKT string geometries to Shapely geometry objects
-        roi_polygons_df['geometry'] = roi_polygons_df['geometry'].apply(wkt.loads)
-        
-        # Create a GeoDataFrame from the ROI data
-        # Assume cell_boundaries_gdf is already defined and has a CRS.
-        # If cell_boundaries_gdf.crs is None, roi_gdf.crs will also be None,
-        # which is acceptable if coordinates are in the same arbitrary Cartesian system.
-        current_crs = None
-        if 'cell_boundaries_gdf' in locals() and cell_boundaries_gdf is not None and hasattr(cell_boundaries_gdf, 'crs'):
-            current_crs = cell_boundaries_gdf.crs
-            print(f"Using CRS from cell_boundaries_gdf: {current_crs}")
-        else:
-            print("Warning: cell_boundaries_gdf not found or has no CRS. Assuming planar coordinates for ROIs.")
-            
-        roi_gdf = gpd.GeoDataFrame(roi_polygons_df, geometry='geometry', crs=current_crs)
-        print("Successfully converted ROI geometries to GeoDataFrame.")
-        print("ROI GeoDataFrame Head:")
-        print(roi_gdf.head())
-        # Perform spatial selection of cells within ROIs
 
-        if 'cell_boundaries_gdf' in locals() and cell_boundaries_gdf is not None:
-            print(f"Shape of cell_boundaries_gdf before spatial join: {cell_boundaries_gdf.shape}")
-            print(f"Shape of roi_gdf before spatial join: {roi_gdf.shape}")
+# %%
+# Convert WKT string geometries to Shapely geometry objects
+roi_polygons_df['geometry'] = roi_polygons_df['geometry'].apply(wkt.loads)
 
-            # Prepare the left GeoDataFrame for sjoin to avoid 'EntityID' column clash
-            # The original cell_boundaries_gdf has 'EntityID' as both index and column.
-            # Renaming the index ensures that when sjoin (or its internal functions)
-            # calls reset_index(), the new column from the index doesn't conflict.
-            cell_boundaries_gdf_sjoin_ready = cell_boundaries_gdf.copy()
-            cell_boundaries_gdf_sjoin_ready.index.name = 'original_cell_EntityID_idx' # Rename the index
+# Create a GeoDataFrame from the ROI data
+# Assume cell_boundaries_gdf is already defined and has a CRS.
+# If cell_boundaries_gdf.crs is None, roi_gdf.crs will also be None,
+# which is acceptable if coordinates are in the same arbitrary Cartesian system.
+current_crs = None
+if 'cell_boundaries_gdf' in locals() and cell_boundaries_gdf is not None and hasattr(cell_boundaries_gdf, 'crs'):
+    current_crs = cell_boundaries_gdf.crs
+    print(f"Using CRS from cell_boundaries_gdf: {current_crs}")
+else:
+    print("Warning: cell_boundaries_gdf not found or has no CRS. Assuming planar coordinates for ROIs.")
 
-            # Spatial join: find cells whose geometries are 'within' the ROI polygons
-            # 'how="inner"' means only cells that are within an ROI are kept.
-            # 'predicate="within"' checks if cell geometry is entirely within ROI geometry.
-            # Added lsuffix and rsuffix to handle any potential column name overlaps clearly.
-            cells_in_rois_gdf = gpd.sjoin(
-                cell_boundaries_gdf_sjoin_ready,
-                roi_gdf,
-                how="inner",
-                predicate="within",
-                lsuffix='_cell',
-                rsuffix='_roi'
-            )
-            
-            print(f"\nFound {cells_in_rois_gdf.shape[0]} cells within the defined ROIs.")
-            if not cells_in_rois_gdf.empty:
-                print("Head of cells_in_rois_gdf (cells spatially selected by ROIs):")
-                print(cells_in_rois_gdf.head())
+# %%   
+roi_gdf = gpd.GeoDataFrame(roi_polygons_df, geometry='geometry', crs=current_crs)
+print("Successfully converted ROI geometries to GeoDataFrame.")
+print("ROI GeoDataFrame Head:")
+roi_gdf.head()
 
-                # Analyze the selected cells
-                # The 'sjoin' operation adds columns from roi_gdf to cells_in_rois_gdf.
-                # The column 'index_right' usually stores the index of the right GeoDataFrame (roi_gdf) for each match.
-                # Columns from roi_gdf like 'EntityID' (e.g., 'hippocampus') and 'group' (e.g., 'SubROI hippo') will be present.
-                
-                if 'group' in cells_in_rois_gdf.columns: # 'group' column from the ROI CSV
-                    print("\nCell counts per ROI group (from 'group' column of ROI CSV):")
-                    print(cells_in_rois_gdf.groupby('group').size())
-                elif 'EntityID_roi' in cells_in_rois_gdf.columns: # 'EntityID' from roi_gdf, now suffixed as 'EntityID_roi'
-                    print("\nCell counts per ROI EntityID (from 'EntityID_roi' column, originally from ROI CSV):")
-                    print(cells_in_rois_gdf.groupby('EntityID_roi').size())
-                else:
-                    print("\nCould not determine ROI grouping column ('group' or 'EntityID_right') in the joined data.")
-                # Optional: Visualize selected cells with ROIs
-                
-                print("\nPlotting selected cells and ROIs...")
-                fig, ax = plt.subplots(1, 1, figsize=(12, 12))
-                
-                # Plot all original cell boundaries lightly
-                cell_boundaries_gdf.plot(ax=ax, color='lightgray', edgecolor='silver', alpha=0.3, label='All Cells (Original)')
-                
-                # Plot cells that fall within ROIs
-                # Use the 'group' column from ROI for coloring if available and multiple groups exist
-                if 'group' in cells_in_rois_gdf.columns and cells_in_rois_gdf['group'].nunique() > 0:
-                    # Check if 'group' column is suitable for legend (e.g., not too many unique values)
-                    unique_groups = cells_in_rois_gdf['group'].nunique()
-                    if unique_groups <= 10: # Arbitrary threshold for a readable legend
-                         cells_in_rois_gdf.plot(ax=ax, column='group', legend=True, alpha=0.7, categorical=True,
+# %%
+# Perform spatial selection of cells within ROIs
+print(f"Shape of cell_boundaries_gdf before spatial join: {cell_boundaries_gdf.shape}")
+print(f"Shape of roi_gdf before spatial join: {roi_gdf.shape}")
+
+# %%
+# Prepare the left GeoDataFrame for sjoin to avoid 'EntityID' column clash
+# The original cell_boundaries_gdf has 'EntityID' as both index and column.
+# Renaming the index ensures that when sjoin (or its internal functions)
+# calls reset_index(), the new column from the index doesn't conflict.
+cell_boundaries_gdf_sjoin_ready = cell_boundaries_gdf.copy()
+cell_boundaries_gdf_sjoin_ready.index.name = 'original_cell_EntityID_idx' # Rename the index
+
+# %%
+# Spatial join: find cells whose geometries are 'within' the ROI polygons
+# 'how="inner"' means only cells that are within an ROI are kept.
+# 'predicate="within"' checks if cell geometry is entirely within ROI geometry.
+# Added lsuffix and rsuffix to handle any potential column name overlaps clearly.
+cells_in_rois_gdf = gpd.sjoin(
+    cell_boundaries_gdf_sjoin_ready,
+    roi_gdf,
+    how="inner",
+    predicate="within",
+    lsuffix='_cell',
+    rsuffix='_roi'
+)
+
+# %%
+cells_in_rois_gdf.head()
+
+# %%
+print(f"\nFound {cells_in_rois_gdf.shape[0]} cells within the defined ROIs.")
+
+# %%
+print("Head of cells_in_rois_gdf (cells spatially selected by ROIs):")
+print(cells_in_rois_gdf.head())
+
+# %%
+# Analyze the selected cells
+print("\nCell counts per ROI:")
+print(cells_in_rois_gdf.groupby('group').size())
+
+# %%
+# Visualize selected cells with ROIs
+
+if plot_enable:
+
+    print("\nCell counts per ROI group (from 'group' column of ROI CSV):")
+    print(cells_in_rois_gdf.groupby('group').size())
+
+    print("\nPlotting selected cells and ROIs...")
+    fig, ax = plt.subplots(1, 1, figsize=(12, 12))
+
+    # Plot all original cell boundaries lightly
+    cell_boundaries_gdf.plot(ax=ax, color='lightgray', edgecolor='silver', alpha=0.3, label='All Cells (Original)')
+
+    unique_groups = cells_in_rois_gdf['group'].nunique()
+    cells_in_rois_gdf.plot(ax=ax, column='group', legend=True, alpha=0.7, categorical=True,
                                            legend_kwds={'title': "ROI Group", 'loc': 'upper right', 'bbox_to_anchor': (1.25, 1)})
-                    else: # Too many groups, plot with single color
-                        cells_in_rois_gdf.plot(ax=ax, color='red', edgecolor='darkred', alpha=0.7, label=f'Cells in ROIs ({unique_groups} groups)')
-                else: # Fallback to a single color if no 'group' or only one group
-                    cells_in_rois_gdf.plot(ax=ax, color='red', edgecolor='darkred', alpha=0.7, label='Cells in ROIs')
 
-                # Plot ROI boundaries
-                roi_gdf.plot(ax=ax, facecolor='none', edgecolor='blue', linewidth=2, label='ROI Polygons')
-                
-                ax.set_title("Cells within Defined ROIs")
-                ax.set_xlabel("X-coordinate")
-                ax.set_ylabel("Y-coordinate")
-                
-                # Adjust legend display
-                handles, labels = ax.get_legend_handles_labels()
-                if handles: # Only create legend if there are labeled artists
-                    # If categorical plot created its own legend, this might override or duplicate.
-                    # For simplicity, let's try a combined legend.
-                    # If categorical legend is present, it might be better to rely on that.
-                    # The legend_kwds in categorical plot already places it.
-                    # If not using categorical plot, then this general legend is useful.
-                    if not ('group' in cells_in_rois_gdf.columns and cells_in_rois_gdf['group'].nunique() > 0 and cells_in_rois_gdf['group'].nunique() <=10) :
-                         ax.legend(loc='upper right', bbox_to_anchor=(1.25, 1))
+    # Plot ROI boundaries
+    roi_gdf.plot(ax=ax, facecolor='none', edgecolor='blue', linewidth=2, label='ROI Polygons')
 
-                plt.tight_layout(rect=[0, 0, 0.85, 1]) # Adjust layout to make space for legend if it's outside
-                plt.show()
-            else:
-                print("No cells found within any ROIs after spatial join.")
-        else:
-            print("cell_boundaries_gdf is not defined. Cannot perform spatial selection.")
+    ax.set_title("Cells within Defined ROIs")
+    ax.set_xlabel("X-coordinate")
+    ax.set_ylabel("Y-coordinate")
 
-    except ImportError:
-        print("Shapely library is not installed. Please install it to process WKT geometries: pip install shapely")
-    except Exception as e:
-        print(f"An error occurred during ROI processing or spatial join: {e}")
-        import traceback
-        traceback.print_exc()
-else:
-    if roi_polygons_df is None:
-        print("ROI polygons DataFrame (roi_polygons_df) was not loaded. Skipping spatial selection.")
-    elif roi_polygons_df.empty:
-        print("ROI polygons DataFrame (roi_polygons_df) is empty. Skipping spatial selection.")
+    # Adjust legend display
+    handles, labels = ax.get_legend_handles_labels()
 
-# %%
-# End of added section. The rest of the original script would follow.
-# %%
-# adata.obs.index = adata.obs.index.astype(str)
-# cell_boundaries_gdf.index = cell_boundaries_gdf.index.astype(str)
-
-# print(adata.obs.index[:5])
-# print(cell_boundaries_gdf.index[:5])
-
-# %%
-# common_cells_boundaries = adata.obs.index.intersection(cell_boundaries_gdf.index)
-# common_cells_boundaries[:5]
-
-# %%
-# adata.uns['cell_boundaries_gdf'] = cell_boundaries_gdf.loc[common_cells_boundaries]
-
-# %% [markdown]
-# ## Differentially expressed genes
-
-# %%
-differentially_expressed_genes_file = os.path.join(base_path, 'differentially_expressed_genes.csv')
-
-# %%
-degs_df = pd.read_csv(differentially_expressed_genes_file, index_col=0)
-print(degs_df.shape)
-print(adata.shape)
-
-# %%
-degs_df.head()
-
-# %%
-print(len(degs_df.gene.unique()))
-
-# %%
-degs_df = degs_df.set_index('gene', drop=False)
-degs_df.shape
-
-# %%
-print(degs_df.index[:5])
-print(adata.var.index[:5])
-
-# %%
-adata.var.index = adata.var.index.astype(str)
-degs_df.index = degs_df.index.astype(str)
-
-# %%
-common_genes = adata.var.index.intersection(degs_df.index)
-len(common_genes)
-
-# %%
-# adata.uns['cell_boundaries_gdf'] = degs_df.loc[common_genes]
-
-# %% [markdown]
-# ## Detected transcripts
-
-# %%
-detected_transcripts_file = os.path.join(base_path, 'detected_transcripts.parquet')
-
-# %%
-det_trans_df = pd.read_parquet(detected_transcripts_file)
-det_trans_df.shape
-
-# %%
-det_trans_df.head()
-
-# %% [markdown]
-# ## Cell categories
-
-# %%
-cell_categories_file = os.path.join(base_path, 'cell_categories.csv')
-cell_numeric_categories_file = os.path.join(base_path, 'cell_numeric_categories.csv')
-
-# %%
-cell_categories_df = pd.read_csv(cell_categories_file, index_col=0) # Assuming first column is cell ID
-cell_numeric_categories_df = pd.read_csv(cell_numeric_categories_file, index_col=0) # Assuming first column is cell ID
-
-# %%
-cell_categories_df.head()
-
-# %%
-cell_numeric_categories_df.head()
-
-# %% [markdown]
-# # 2. Exploratory Data Analysis
-# 
-# Basic statistics and distributions of the data.
-
-# %%
-print(f"Number of cells: {adata.n_obs}")
-print(f"Number of genes: {adata.n_vars}")
-
-# %%
-print("Calculating QC metrics (total_counts, n_genes_by_counts)...")
-sc.pp.calculate_qc_metrics(adata, inplace=True)
-
-# %%
-fig, axes = plt.subplots(1, 2, figsize=(16, 5))
-
-# Plot for total_counts
-sns.histplot(adata.obs['total_counts'], bins=50, kde=False, ax=axes[0])
-axes[0].set_xlabel("Total transcripts per cell")
-axes[0].set_ylabel("Number of cells")
-axes[0].set_title("Distribution of Total Transcripts per Cell")
-
-# Plot for n_genes_by_counts
-sns.histplot(adata.obs['n_genes_by_counts'], bins=50, kde=False, ax=axes[1])
-axes[1].set_xlabel("Number of genes detected per cell")
-axes[1].set_ylabel("Number of cells")
-axes[1].set_title("Distribution of Genes Detected per Cell")
-
-plt.tight_layout()
-plt.show()
-
-# %%
-coll_to_summary = 'leiden'
-
-if adata.obs[coll_to_summary].nunique() < 30 and adata.obs[coll_to_summary].nunique() > 1:
-    plt.figure(figsize=(8, max(4, adata.obs[coll_to_summary].nunique() * 0.3)))
-    sns.countplot(y=adata.obs[coll_to_summary], order = adata.obs[coll_to_summary].value_counts(dropna=False).index)
-    plt.title(f"Cell Counts by {coll_to_summary}")
-    plt.xlabel("Number of Cells")
-    plt.ylabel(coll_to_summary)
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
     plt.show()
 
 # %% [markdown]
-# ## 3. Visualization
+# # Differential Gene Expression (DGE) Analysis between ROIs
+#
+# This section performs differential gene expression analysis between two selected ROIs.
+# It assumes that `adata` (the AnnData object with gene expression) and
+# `cells_in_rois_gdf` (GeoDataFrame with cells selected by ROIs and their group assignments)
+# are available from the previous steps.
 
 # %%
-img = mpimg.imread(summary_image_file)
-plt.figure(figsize=(10,10))
-plt.imshow(img)
-plt.axis('off') # Turn off axis numbers and ticks
-plt.title("Experiment Summary Image (region_R1/summary.png)")
+# DGE Analysis
+print("\nStarting Differential Gene Expression Analysis...")
+roi_group_column = 'group'
+
+# Get unique ROI groups
+available_roi_groups = cells_in_rois_gdf[roi_group_column].unique()
+print(f"Available ROI groups for DGE: {available_roi_groups}")
+
+# %%
+roi_group_1_name = available_roi_groups[0]
+roi_group_2_name = available_roi_groups[1]
+print(f"Selected ROI groups for DGE: '{roi_group_1_name}' vs '{roi_group_2_name}'")
+
+# %%
+# Create a mapping of cell EntityID to its ROI group
+cell_to_roi_map = cells_in_rois_gdf[roi_group_column].to_dict()
+for key, value in list(cell_to_roi_map.items())[:5]:
+    print(f"{key}: {value}")
+
+# %%
+# Add 'roi_assignment' to adata.obs
+# Initialize with 'unassigned' or a suitable default
+adata.obs['roi_assignment'] = 'unassigned'
+
+# %%
+print(f"Debug: adata.obs.index type: {adata.obs.index.dtype}, length: {len(adata.obs.index)}")
+if len(adata.obs.index) > 0: print(f"Debug: First 3 adata.obs.index examples: {adata.obs.index[:3].tolist()}")
+
+# %%
+# Keys for cell_to_roi_map
+cell_to_roi_map = {str(key): value for key, value in cell_to_roi_map.items()}
+map_keys = list(cell_to_roi_map.keys())
+
+# %%
+# Perform intersection ensuring
+adata_index_as_str = adata.obs.index
+map_keys_as_str_for_intersection = pd.Index(map_keys)
+
+valid_intersected_ids_str = adata_index_as_str.intersection(map_keys_as_str_for_intersection)
+print(f"Debug: Number of common string IDs found by intersection: {len(valid_intersected_ids_str)}")
+if len(valid_intersected_ids_str) > 0: print(f"Debug: Common string IDs example: {valid_intersected_ids_str[:3].tolist()}")
+
+# %%
+# Assign ROI based on the intersection.
+for cell_id_str_from_intersection in valid_intersected_ids_str:
+    if cell_id_str_from_intersection in adata.obs.index:
+            adata.obs.loc[cell_id_str_from_intersection, 'roi_assignment'] = cell_to_roi_map[cell_id_str_from_intersection]
+        
+# %%
+# Check how many cells were assigned
+print(f"Cells assigned to ROIs in adata.obs: \n{adata.obs['roi_assignment'].value_counts()}")
+
+# %%
+# Filter adata for cells belonging to the two selected ROI groups
+adata_dge = adata[adata.obs['roi_assignment'].isin([roi_group_1_name, roi_group_2_name])].copy()
+print(f"Shape of AnnData object for DGE (cells from '{roi_group_1_name}' and '{roi_group_2_name}'): {adata_dge.shape}")
+
+# %%
+print(f"Performing DGE using Wilcoxon rank-sum test, comparing {roi_group_1_name} (reference) vs {roi_group_2_name}...")
+# Ensure data is log-transformed for rank_genes_groups, as it expects log-normalized counts.
+# This will also populate adata_dge.uns['log1p'] correctly.
+print("Applying sc.pp.log1p(adata_dge) before rank_genes_groups...")
+sc.pp.log1p(adata_dge)
+sc.tl.rank_genes_groups(adata_dge, 
+                        groupby='roi_assignment', 
+                        groups=[roi_group_1_name], # Group to test
+                        reference=roi_group_2_name, # Reference group
+                        method='wilcoxon', # or 't-test', 'logreg'
+                        corr_method='benjamini-hochberg', # multiple testing correction
+                        key_added='rank_genes_dge') # Store results in adata_dge.uns['rank_genes_dge']
+
+print("DGE calculation complete.")
+
+# %%
+# Visualize DGE results
+print(f"Creating volcano plot for {roi_group_1_name}...")
+
+# Create the volcano plot
+fig, ax = create_volcano_plot(
+    adata_dge, 
+    group_name=roi_group_1_name,
+    key='rank_genes_dge',
+    pval_threshold=0.05,
+    logfc_threshold=0.5,
+    title=f"Volcano Plot: {roi_group_1_name} vs {roi_group_2_name}",
+    show_gene_labels=True,
+    top_genes=10
+)
+
 plt.show()
 
 # %%
-print(adata.obsm_keys())
-print(list(adata.obs.columns))
+# Displaying the DGE results as a DataFrame
+dge_results_df = pd.DataFrame(adata_dge.uns['rank_genes_dge']['names'])[roi_group_1_name]
+dge_scores_df = pd.DataFrame(adata_dge.uns['rank_genes_dge']['scores'])[roi_group_1_name]
+dge_pvals_df = pd.DataFrame(adata_dge.uns['rank_genes_dge']['pvals_adj'])[roi_group_1_name]
+dge_logfc_df = pd.DataFrame(adata_dge.uns['rank_genes_dge']['logfoldchanges'])[roi_group_1_name]
+
+summary_df = pd.DataFrame({
+    'gene': dge_results_df,
+    'score': dge_scores_df,
+    'pval_adj': dge_pvals_df,
+    'log2fc': dge_logfc_df
+})
+print(f"\nTop differentially expressed genes for {roi_group_1_name} compared to {roi_group_2_name}:")
+print(summary_df.head(20))
 
 # %%
-adata.obsm['spatial'] = adata.obs[['center_x', 'center_y']].to_numpy()
-spatial_coords_available = True
-
-# %%
-features = ['total_counts', 'n_genes_by_counts', 'leiden']
-for color_by in features:
-    plt.figure(figsize=(10, 10))
-    sc.pl.spatial(adata, color=color_by, spot_size=30, show=False, frameon=False)
-    plt.title(f"Spatial Plot of Cells (Colored by {color_by if color_by else 'default'})")
-    plt.show()
-
-# %%
-print(list(adata.var.columns))
-print(list(adata.uns))
-
-# %%
-sc.pp.highly_variable_genes(adata, min_mean=0.0125, max_mean=3, min_disp=0.5, flavor='cell_ranger')
-
-# %%
-import numpy as np
-import scipy.sparse
-
-print(f"adata.X data type: {adata.X.dtype}")
-
-if scipy.sparse.issparse(adata.X):
-    print(adata.X[:5, :5].toarray())
-    if adata.X.nnz > 0: # nnz is number of stored_elements
-        print(f"Min non-zero value in adata.X: {adata.X.data.min()}")
-        print(f"Max non-zero value in adata.X: {adata.X.data.max()}")
-        has_nan_sparse = np.isnan(adata.X.data).any()
-        has_inf_sparse = np.isinf(adata.X.data).any()
-        print(f"adata.X.data contains NaNs: {has_nan_sparse}")
-        print(f"adata.X.data contains Infs: {has_inf_sparse}")
-
-else: # Dense array
-    print(adata.X[:5, :5])
-    print(f"Min value in adata.X: {adata.X.min()}")
-    print(f"Max value in adata.X: {adata.X.max()}")
-    has_nan_dense = np.isnan(adata.X).any()
-    has_inf_dense = np.isinf(adata.X).any()
-    print(f"adata.X contains NaNs: {has_nan_dense}")
-    print(f"adata.X contains Infs: {has_inf_dense}")
-
-# %%
-hvg_genes = adata.var_names[adata.var['highly_variable']].tolist()
-if len(hvg_genes) > 0:
-    num_genes_to_plot = min(len(hvg_genes), 3)
-    genes_to_plot = hvg_genes[:num_genes_to_plot]
-    print(f"Plotting spatial expression for HVGs: {genes_to_plot}")
-    sc.pl.spatial(adata, color=genes_to_plot, spot_size=30, show=True, frameon=False, ncols=num_genes_to_plot)
-else:
-    print("No highly variable genes found after computation.")
-
-
-
-# %%
-# generate colors for categories by plotting
-sc.pl.umap(adata, color="leiden", legend_loc='on data')
-cats = adata.obs['leiden'].cat.categories.tolist()
-colors = list(adata.uns['leiden_colors'])
-cat_colors = dict(zip(cats, colors))
-
-# colors for clustergrammer2
-ser_color = pd.Series(cat_colors)
-ser_color.name = 'color'
-df_colors = pd.DataFrame(ser_color)
-df_colors.index = ['Leiden-' + str(x) for x in df_colors.index.tolist()]
-
-df_colors.loc[''] = 'white'
-
-# %% [markdown]
-# # 3. Alternative DEGs
-
-# %%
-resolution = 1.5
-
-# Leiden Clustering
-######################
-
-# dividing by volume instead
-sc.pp.normalize_total(adata_v2)
-sc.pp.log1p(adata_v2)
-sc.pp.scale(adata_v2, max_value=10)
-sc.tl.pca(adata_v2, svd_solver='arpack')
-sc.pp.neighbors(adata_v2, n_neighbors=10, n_pcs=20)
-sc.tl.umap(adata_v2)
-sc.tl.leiden(adata_v2, resolution=resolution)
-
-# Calculate Leiden Signatures
-#########################################df_pos.index = [str(x) for x in list(range(df_pos.shape[0]))]
-ser_counts = adata_v2.obs['leiden'].value_counts()
-ser_counts.name = 'cell counts'
-meta_leiden = pd.DataFrame(ser_counts)
-
-cat_name = 'leiden'
-sig_leiden = pd.DataFrame(columns=adata_v2.var_names, index=adata_v2.obs[cat_name].cat.categories)
-for clust in adata_v2.obs[cat_name].cat.categories:
-    sig_leiden.loc[clust] = adata_v2[adata_v2.obs[cat_name].isin([clust]),:].X.mean(0)
-sig_leiden = sig_leiden.transpose()
-leiden_clusters = ['Leiden-' + str(x) for x in sig_leiden.columns.tolist()]
-sig_leiden.columns = leiden_clusters
-meta_leiden.index = sig_leiden.columns.tolist()
-meta_leiden['leiden'] = pd.Series(meta_leiden.index.tolist(), index=meta_leiden.index.tolist())
-
-# generate colors for categories by plotting
-sc.pl.umap(adata_v2, color="leiden", legend_loc='on data')
-cats = adata_v2.obs['leiden'].cat.categories.tolist()
-colors = list(adata_v2.uns['leiden_colors'])
-cat_colors = dict(zip(cats, colors))
-
-# colors for clustergrammer2
-ser_color = pd.Series(cat_colors)
-ser_color.name = 'color'
-df_colors = pd.DataFrame(ser_color)
-df_colors.index = ['Leiden-' + str(x) for x in df_colors.index.tolist()]
-
-df_colors.loc[''] = 'white'
-
-# %% [markdown]
-# # R. ROI
-
-# %%
-roi_file = "E:/Githubs/SPATIAL_data/202503071102_SESSA-p30-E165_VMSC10702/R3/p30_CTRL_R3/cells1.csv"
-roi_data = pd.read_csv(roi_file)
-cell1_ids = roi_data.iloc[:, 0].astype(str).tolist()
-cell1_ids[:5]
-
-# %%
-roi_file = "E:/Githubs/SPATIAL_data/202503071102_SESSA-p30-E165_VMSC10702/R3/p30_CTRL_R3/cells2.csv"
-roi_data = pd.read_csv(roi_file)
-cell2_ids = roi_data.iloc[:, 0].astype(str).tolist()
-cell2_ids[:5]
-
-# %%
-# roi1 = adata[adata.obs.index.isin(cell_ids), :]
-# roi1
-
-# %%
-# adata[adata.obs.index.isin(cell_ids), :].obs["roi"] = "roi1"
-
-# %%
-# For multiple ROI assignments
-roi_assignments = {
-    "roi1": cell1_ids,
-    "roi2": cell2_ids
-}
-
-# Initialize column
-adata.obs["roi"] = "unassigned"
-
-# Assign each ROI
-for roi_name, cell_list in roi_assignments.items():
-    mask = adata.obs.index.isin(cell_list)
-    adata.obs.loc[mask, "roi"] = roi_name
-
-# %%
-color_by = "roi"
-plt.figure(figsize=(10, 10))
-sc.pl.spatial(adata, color=color_by, spot_size=30, show=False, frameon=False)
-plt.title(f"Spatial Plot of Cells (Colored by {color_by if color_by else 'default'})")
-plt.show()
-
-# %%
-import scanpy as sc
-import pandas as pd
-
-# First, subset to only cells in roi1 and roi2 (exclude unassigned)
-adata_roi = adata[adata.obs["roi"].isin(["roi1", "roi2"])].copy()
-
-# Run differential expression analysis
-sc.tl.rank_genes_groups(
-    adata_roi, 
-    groupby='roi',  # Column containing your groups
-    method='wilcoxon',  # or 't-test', 'logreg', 't-test_overestim_var'
-    key_added='roi_deg',  # Key to store results
-    reference='roi1',  # Compare roi2 vs roi1 (or use 'rest' for one-vs-rest)
-    n_genes=None  # Calculate for all genes
-)
-
-# View top DEGs
-sc.pl.rank_genes_groups(adata_roi, key='roi_deg', n_genes=25, sharey=False)
-
-# Get results as a DataFrame
-# Top genes upregulated in roi2 compared to roi1
-result = sc.get.rank_genes_groups_df(adata_roi, group='roi2', key='roi_deg')
-print(result.head(20))
-
-# Save full results
-result.to_csv('roi2_vs_roi1_DEGs.csv', index=False)
-
-# Filter by significance and fold change
-significant_degs = result[
-    (result['pvals_adj'] < 0.05) &  # Adjusted p-value threshold
-    (abs(result['logfoldchanges']) > 0.5)  # Log fold change threshold
-]
-print(f"Number of significant DEGs: {len(significant_degs)}")
-
-# %% [markdown]
-# # Two samples
-
-# %%
-import scanpy as sc
-import pandas as pd
-
-# # 1. Load both samples
-# sample1 = sc.read_h5ad('sample1.h5ad')
-# sample2 = sc.read_h5ad('sample2.h5ad')
-
-# # 2. Subset to only roi1 cells from each sample
-# # Assuming you've already assigned ROIs to each sample
-# sample1_roi1 = sample1[sample1.obs['roi'] == 'roi1'].copy()
-# sample2_roi1 = sample2[sample2.obs['roi'] == 'roi1'].copy()
-
-
-# Load samples
-sample1 = sc.read_h5ad('sample1.h5ad')
-sample2 = sc.read_h5ad('sample2.h5ad')
-
-# Load ROI cell IDs (assuming same format as before)
-roi1_cells_sample1 = pd.read_csv('roi1_cells_sample1.csv', squeeze=True).tolist()
-roi1_cells_sample2 = pd.read_csv('roi1_cells_sample2.csv', squeeze=True).tolist()
-
-# Subset each sample
-sample1_roi1 = sample1[sample1.obs.index.isin(roi1_cells_sample1)].copy()
-sample2_roi1 = sample2[sample2.obs.index.isin(roi1_cells_sample2)].copy()
-
-# Add metadata
-sample1_roi1.obs['sample'] = 'sample1'
-sample1_roi1.obs['roi'] = 'roi1'
-sample2_roi1.obs['sample'] = 'sample2'
-sample2_roi1.obs['roi'] = 'roi1'
-
-# Continue with concatenation and DEG analysis as above...
-
-# 3. Add sample information before merging
-sample1_roi1.obs['sample'] = 'sample1'
-sample2_roi1.obs['sample'] = 'sample2'
-
-# 4. Concatenate the two subsets
-adata_merged = sc.concat(
-    [sample1_roi1, sample2_roi1],
-    axis=0,  # Concatenate cells (observations)
-    join='outer',  # Keep all genes
-    label='sample',
-    keys=['sample1', 'sample2'],
-    index_unique='-'  # Add suffix to make cell names unique
-)
-
-# 5. Run differential expression analysis between samples
-sc.tl.rank_genes_groups(
-    adata_merged,
-    groupby='sample',  # Compare by sample
-    method='wilcoxon',
-    reference='sample1',  # Compare sample2 vs sample1
-    key_added='sample_deg'
-)
-
-# 6. Get and save results
-results = sc.get.rank_genes_groups_df(adata_merged, group='sample2', key='sample_deg')
-print(results.head(20))
-results.to_csv('roi1_sample2_vs_sample1_DEGs.csv', index=False)
-
-# Filter significant DEGs
-significant_degs = results[
-    (results['pvals_adj'] < 0.05) & 
-    (abs(results['logfoldchanges']) > 0.5)
-]
-print(f"Number of significant DEGs: {len(significant_degs)}")
-
-# %%
-# Load samples
-sample1 = sc.read_h5ad('sample1.h5ad')
-sample2 = sc.read_h5ad('sample2.h5ad')
-
-# Load ROI cell IDs (assuming same format as before)
-roi1_cells_sample1 = pd.read_csv('roi1_cells_sample1.csv', squeeze=True).tolist()
-roi1_cells_sample2 = pd.read_csv('roi1_cells_sample2.csv', squeeze=True).tolist()
-
-# Subset each sample
-sample1_roi1 = sample1[sample1.obs.index.isin(roi1_cells_sample1)].copy()
-sample2_roi1 = sample2[sample2.obs.index.isin(roi1_cells_sample2)].copy()
-
-# Add metadata
-sample1_roi1.obs['sample'] = 'sample1'
-sample1_roi1.obs['roi'] = 'roi1'
-sample2_roi1.obs['sample'] = 'sample2'
-sample2_roi1.obs['roi'] = 'roi1'
-
-# Continue with concatenation and DEG analysis as above...
-
-# %%
-# 1. Check for batch effects
-sc.pp.combat(adata_merged, key='sample')  # Batch correction if needed
-
-# 2. Ensure proper normalization
-# If samples were processed differently, re-normalize after merging
-sc.pp.normalize_total(adata_merged, target_sum=1e4)
-sc.pp.log1p(adata_merged)
-
-# 3. Visualize to check for batch effects
-sc.pp.pca(adata_merged)
-sc.pl.pca(adata_merged, color=['sample'], title='PCA by sample')
-
-# 4. Alternative: Include batch as covariate
-# This requires using 'logreg' method
-sc.tl.rank_genes_groups(
-    adata_merged,
-    groupby='sample',
-    method='logreg',
-    reference='sample1'
-)
-
-# %%
-# Volcano plot
-sc.pl.rank_genes_groups_volcano(
-    adata_merged,
-    key='sample_deg',
-    group='sample2'
-)
-
-# Heatmap of top DEGs
-top_genes = results.head(50)['names'].tolist()
-sc.pl.heatmap(
-    adata_merged,
-    var_names=top_genes,
-    groupby='sample',
-    figsize=(8, 12),
-    swap_axes=False,
-    dendrogram=True
-)
-
-# Compare expression of specific genes
-genes_of_interest = ['GENE1', 'GENE2', 'GENE3']
-sc.pl.violin(
-    adata_merged,
-    keys=genes_of_interest,
-    groupby='sample',
-    rotation=45
-)
-
-
+print("\n--- End of Script ---")
