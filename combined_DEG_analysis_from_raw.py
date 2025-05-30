@@ -331,7 +331,6 @@ class SampleProcessor:
 
         return self.adata_filtered_rois
 
-# %%
 
 # %% [markdown]
 # ## 1. Define File Paths and Parameters

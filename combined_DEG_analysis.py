@@ -35,7 +35,7 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning) # For sjoin warnings if CRS is not set
 
 # Global plot settings
-PLOT_INTERMEDIATE_ROI_VISUALIZATIONS = False # Set to True to see ROI plots during data loading
+PLOT_INTERMEDIATE_ROI_VISUALIZATIONS = True # Set to True to see ROI plots during data loading
 PLOT_FINAL_DGE_VOLCANO = True
 
 # %% [markdown]
@@ -95,7 +95,9 @@ def load_sample_data(base_path, h5ad_filename, cell_boundaries_filename, roi_csv
     print(f"Loading cell boundaries: {cell_boundaries_file_path}")
     cell_boundaries_gdf = gpd.read_parquet(cell_boundaries_file_path)
     cell_boundaries_gdf = cell_boundaries_gdf.set_index('EntityID', drop=False)
-    print(f"Loaded cell boundaries. Shape: {cell_boundaries_gdf.shape}")
+    # Ensure the index is string type to match downstream operations
+    cell_boundaries_gdf.index = cell_boundaries_gdf.index.astype(str)
+    print(f"Loaded cell boundaries. Shape: {cell_boundaries_gdf.shape}, Index type: {cell_boundaries_gdf.index.dtype}")
 
     # 5. Load and process ROI geometries
     print(f"Loading ROI geometry: {roi_geometry_file_path}")
@@ -185,15 +187,21 @@ def load_sample_data(base_path, h5ad_filename, cell_boundaries_filename, roi_csv
 
         # Define the actual column name for ROI group after sjoin
         # roi_group_column_in_csv is 'group' (defined earlier at line 130), rsuffix for sjoin (line 120) was '_roi'
-        actual_roi_group_col_in_sjoined = f"{roi_group_column_in_csv}_roi"
+        # The ROI group column in cells_in_rois_gdf is roi_group_column_in_csv (e.g., 'group'),
+        # as established by successful access on line 130.
+        # No suffix is added if cell_boundaries_gdf (left df) doesn't have a 'group' column.
 
         # Prepare data for merging: we need the index (EntityID) and the ROI group column.
         # cells_in_rois_gdf.index contains EntityIDs (and its .name is 'original_cell_EntityID_idx').
-        # The ROI group column in cells_in_rois_gdf is actual_roi_group_col_in_sjoined.
-        merge_helper_df = pd.DataFrame({
-            'original_cell_EntityID_idx': cells_in_rois_gdf.index, # These are the EntityIDs
-            actual_roi_group_col_in_sjoined: cells_in_rois_gdf[actual_roi_group_col_in_sjoined]
-        }).drop_duplicates(subset=['original_cell_EntityID_idx']) # Ensure one group per cell for merging
+        # Reset index of cells_in_rois_gdf to make 'original_cell_EntityID_idx' a column.
+        # cells_in_rois_gdf.index.name is 'original_cell_EntityID_idx' (set on line 111).
+        cells_in_rois_gdf_for_merge = cells_in_rois_gdf.reset_index()
+
+        # Now 'original_cell_EntityID_idx' is a regular column in cells_in_rois_gdf_for_merge.
+        # Select this column and the ROI group column to create the merge_helper_df.
+        merge_helper_df = cells_in_rois_gdf_for_merge[
+            ['original_cell_EntityID_idx', roi_group_column_in_csv]
+        ].drop_duplicates(subset=['original_cell_EntityID_idx']) # Ensure one group per cell for merging
 
         temp_plot_gdf = temp_plot_gdf.merge(
             merge_helper_df,
@@ -202,9 +210,10 @@ def load_sample_data(base_path, h5ad_filename, cell_boundaries_filename, roi_csv
             how='left'
         )
 
-        # actual_roi_group_col_in_sjoined was defined above for the merge
-        temp_plot_gdf.plot(ax=ax, column=actual_roi_group_col_in_sjoined, legend=True, alpha=0.7, categorical=True,
-                           legend_kwds={'title': f"{sample_prefix} CSV ROI Group ({actual_roi_group_col_in_sjoined})", 'loc': 'upper right', 'bbox_to_anchor': (1.45, 1)})
+        # Use roi_group_column_in_csv for plotting, as this is the correct column name in cells_in_rois_gdf
+        # and subsequently in temp_plot_gdf after the merge.
+        temp_plot_gdf.plot(ax=ax, column=roi_group_column_in_csv, legend=True, alpha=0.7, categorical=True,
+                           legend_kwds={'title': f"{sample_prefix} CSV ROI Group ({roi_group_column_in_csv})", 'loc': 'upper right', 'bbox_to_anchor': (1.45, 1)})
         roi_gdf.plot(ax=ax, facecolor='none', edgecolor='blue', linewidth=2, label='ROI Polygons (from CSV)')
         ax.set_title(f"Cells within Defined ROIs for {sample_prefix}")
         plt.tight_layout(rect=[0, 0, 0.80, 1])
