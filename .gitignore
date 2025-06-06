@@ -5,6 +5,10 @@
 *.csv
 *.hdf5
 *.html
+*.zip
+*.tar.gz
+*.bin
+*.tif
 
 Archive/
 202504111150_Sessa-p0-p7_VMSC10702/
@@ -12,3 +16,9 @@ Archive/
 data_check/
 DEGs/
 Vignettes/
+Segmentation/R1_combined/vzg_build_temp/
+**/analysis_outputs_old/
+**/analysis_outputs/
+Segmentation/Vpt-segmentation/vzg_build_temp
+models/
+Segmentation/Vpt-segmentation/cpsam

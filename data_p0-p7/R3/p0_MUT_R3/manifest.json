@@ -1,0 +1,17 @@
+{
+    "Datasets": [
+        "202504111150_Sessa-p0-p7_VMSC10702_region_R3.vzg2"
+    ],
+    "FeatureSets": [
+        "ROI"
+    ],
+    "Linkages": {
+        "Cells": {
+        },
+        "ROI": {
+        }
+    },
+    "Name": "p0_R3",
+    "Type": "Experiment",
+    "Version": "2.1.0"
+}
