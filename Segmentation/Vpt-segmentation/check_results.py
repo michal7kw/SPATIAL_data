@@ -15,11 +15,12 @@ except FileNotFoundError:
     print("Warning: Could not change directory to E:/Githubs/SPATIAL_data/Segmentation/Vpt-segmentation. Make sure paths are correct.")
 
 # --- Configuration ---
+tile_index_to_check = 222
 segmentation_spec_path = "E:/Githubs/SPATIAL_data/Segmentation/Vpt-segmentation/analysis_outputs_prepare_test/segmentation_specification.json"
-parquet_file_path = "E:/Githubs/SPATIAL_data/Segmentation/Vpt-segmentation/analysis_outputs_prepare_test/result_tiles/cell_152.parquet"
+parquet_file_path = f"E:/Githubs/SPATIAL_data/Segmentation/Vpt-segmentation/analysis_outputs_prepare_test/result_tiles/cell_{tile_index_to_check}.parquet"
 # Path to the full mosaic DAPI image for the correct Z-plane (z3 in your case)
 dapi_image_path = "E:/Githubs/SPATIAL_data/data_p30-E165/R1/images/mosaic_DAPI_z3.tif"
-tile_index_to_check = 152
+
 
 # --- Load Segmentation Specification for Transform Matrix and Tile Info ---
 micron_to_mosaic_matrix_gp = None
@@ -54,21 +55,21 @@ except Exception as e:
     print("Proceeding with default/hardcoded tile offsets and no micron transform if matrix is None.")
     # Fallback to previously known values if spec load fails, though micron transform will be missing
     if micron_to_mosaic_matrix_gp is None: # Ensure we have some tile offsets if spec fails
-        tile_col_offset = 0    # x_start from previous logs for tile 152
-        tile_row_offset = 20800 # y_start from previous logs for tile 152
+        tile_col_offset = 0    # x_start from previous logs for tile 
+        tile_row_offset = 20800 # y_start from previous logs for tile 
         # tile_width and tile_height remain default or from previous hardcoding
 
-# Tile 152 coordinates and size (from vpt logs: Tile 152 [0, 20800, 2800, 2800])
+# Tile  coordinates and size (from vpt logs: Tile  [0, 20800, 2800, 2800])
 # These are (col_off, row_off, width, height) for rasterio.windows.Window
 # This is now dynamically loaded but kept here as a comment for reference
 # tile_col_offset = 0
 # tile_row_offset = 20800
 # tile_width = 2800
 # tile_height = 2800
-tile_col_offset = 0    # x_start
-tile_row_offset = 20800 # y_start
-tile_width = 2800
-tile_height = 2800
+# tile_col_offset = 0    # x_start # Overridden by spec file
+# tile_row_offset = 20800 # y_start # Overridden by spec file
+# tile_width = 2800 # Overridden by spec file
+# tile_height = 2800 # Overridden by spec file
 
 # --- Load Segmentation Polygons ---
 try:

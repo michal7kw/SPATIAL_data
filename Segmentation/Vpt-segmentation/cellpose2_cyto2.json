@@ -76,9 +76,9 @@
       "segmentation_parameters": {
         "nuclear_channel": "DAPI",
         "entity_fill_channel": "all",
-        "diameter": 70,
-        "flow_threshold": 0.95,
-        "cellprob_threshold": -5.5,
+        "diameter": 10,
+        "flow_threshold": 0.0,
+        "cellprob_threshold": -6.0,
         "minimum_mask_size": 500
       },
       "polygon_parameters": {

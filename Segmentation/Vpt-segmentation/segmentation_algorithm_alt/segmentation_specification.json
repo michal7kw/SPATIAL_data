@@ -1,5 +1,5 @@
 {
-  "timestamp": 1749195943.009978,
+  "timestamp": 1749231092.248419,
   "input_args": {
     "segmentation_algorithm": "./my_segmentation_algorithm_alt.json",
     "input_path": "../../data_p30-E165/R1/images/mosaic_(?P<stain>[\\w|-]+)_z(?P<z>[0-9]+).tif",
@@ -49,14 +49,14 @@
     ],
     "images": [
       {
-        "channel": "DAPI",
-        "z_layer": 3,
-        "full_path": "E:/Githubs/SPATIAL_data/data_p30-E165/R1/images/mosaic_DAPI_z3.tif"
-      },
-      {
         "channel": "PolyT",
         "z_layer": 3,
         "full_path": "E:/Githubs/SPATIAL_data/data_p30-E165/R1/images/mosaic_PolyT_z3.tif"
+      },
+      {
+        "channel": "DAPI",
+        "z_layer": 3,
+        "full_path": "E:/Githubs/SPATIAL_data/data_p30-E165/R1/images/mosaic_DAPI_z3.tif"
       }
     ]
   },
