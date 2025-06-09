@@ -1,0 +1,577 @@
+{
+    "microns_per_pixel": 0.108,
+    "mosaic_width_pixels": 42989,
+    "mosaic_height_pixels": 39224,
+    "bbox_microns": [
+        4201.432,
+        201.2439999999997,
+        8844.155999999999,
+        4437.372
+    ],
+    "hor_num_tiles_box": 23,
+    "vert_num_tiles_box": 21,
+    "mosaic_files": [
+        {
+            "stain": "Pcp4",
+            "z": 0,
+            "file_name": "mosaic_Pcp4_z0.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 0,
+            "file_name": "mosaic_Anti-SETBP1_z0.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 0,
+            "file_name": "mosaic_Snap25_z0.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 0,
+            "file_name": "mosaic_hSETBP1_z0.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 0,
+            "file_name": "mosaic_TAG_z0.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 0,
+            "file_name": "mosaic_Ttr_z0.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 0,
+            "file_name": "mosaic_PolyT_z0.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 0,
+            "file_name": "mosaic_DAPI_z0.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 1,
+            "file_name": "mosaic_Pcp4_z1.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 1,
+            "file_name": "mosaic_Anti-SETBP1_z1.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 1,
+            "file_name": "mosaic_Snap25_z1.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 1,
+            "file_name": "mosaic_hSETBP1_z1.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 1,
+            "file_name": "mosaic_TAG_z1.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 1,
+            "file_name": "mosaic_Ttr_z1.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 1,
+            "file_name": "mosaic_PolyT_z1.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 1,
+            "file_name": "mosaic_DAPI_z1.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 2,
+            "file_name": "mosaic_Pcp4_z2.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 2,
+            "file_name": "mosaic_Anti-SETBP1_z2.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 2,
+            "file_name": "mosaic_Snap25_z2.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 2,
+            "file_name": "mosaic_hSETBP1_z2.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 2,
+            "file_name": "mosaic_TAG_z2.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 2,
+            "file_name": "mosaic_Ttr_z2.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 2,
+            "file_name": "mosaic_PolyT_z2.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 2,
+            "file_name": "mosaic_DAPI_z2.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 3,
+            "file_name": "mosaic_Pcp4_z3.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 3,
+            "file_name": "mosaic_Anti-SETBP1_z3.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 3,
+            "file_name": "mosaic_Snap25_z3.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 3,
+            "file_name": "mosaic_hSETBP1_z3.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 3,
+            "file_name": "mosaic_TAG_z3.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 3,
+            "file_name": "mosaic_Ttr_z3.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 3,
+            "file_name": "mosaic_PolyT_z3.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 3,
+            "file_name": "mosaic_DAPI_z3.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 4,
+            "file_name": "mosaic_Pcp4_z4.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 4,
+            "file_name": "mosaic_Anti-SETBP1_z4.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 4,
+            "file_name": "mosaic_Snap25_z4.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 4,
+            "file_name": "mosaic_hSETBP1_z4.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 4,
+            "file_name": "mosaic_TAG_z4.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 4,
+            "file_name": "mosaic_Ttr_z4.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 4,
+            "file_name": "mosaic_PolyT_z4.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 4,
+            "file_name": "mosaic_DAPI_z4.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 5,
+            "file_name": "mosaic_Pcp4_z5.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 5,
+            "file_name": "mosaic_Anti-SETBP1_z5.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 5,
+            "file_name": "mosaic_Snap25_z5.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 5,
+            "file_name": "mosaic_hSETBP1_z5.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 5,
+            "file_name": "mosaic_TAG_z5.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 5,
+            "file_name": "mosaic_Ttr_z5.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 5,
+            "file_name": "mosaic_PolyT_z5.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 5,
+            "file_name": "mosaic_DAPI_z5.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 6,
+            "file_name": "mosaic_Pcp4_z6.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 6,
+            "file_name": "mosaic_Anti-SETBP1_z6.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 6,
+            "file_name": "mosaic_Snap25_z6.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 6,
+            "file_name": "mosaic_hSETBP1_z6.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 6,
+            "file_name": "mosaic_TAG_z6.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 6,
+            "file_name": "mosaic_Ttr_z6.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 6,
+            "file_name": "mosaic_PolyT_z6.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 6,
+            "file_name": "mosaic_DAPI_z6.tif"
+        }
+    ],
+    "mosaic_pyramid_files": [
+        {
+            "stain": "Pcp4",
+            "z": 0,
+            "file_name": "pyrmosaic_Pcp4_z0.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 0,
+            "file_name": "pyrmosaic_Anti-SETBP1_z0.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 0,
+            "file_name": "pyrmosaic_Snap25_z0.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 0,
+            "file_name": "pyrmosaic_hSETBP1_z0.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 0,
+            "file_name": "pyrmosaic_TAG_z0.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 0,
+            "file_name": "pyrmosaic_Ttr_z0.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 0,
+            "file_name": "pyrmosaic_PolyT_z0.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 0,
+            "file_name": "pyrmosaic_DAPI_z0.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 1,
+            "file_name": "pyrmosaic_Pcp4_z1.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 1,
+            "file_name": "pyrmosaic_Anti-SETBP1_z1.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 1,
+            "file_name": "pyrmosaic_Snap25_z1.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 1,
+            "file_name": "pyrmosaic_hSETBP1_z1.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 1,
+            "file_name": "pyrmosaic_TAG_z1.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 1,
+            "file_name": "pyrmosaic_Ttr_z1.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 1,
+            "file_name": "pyrmosaic_PolyT_z1.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 1,
+            "file_name": "pyrmosaic_DAPI_z1.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 2,
+            "file_name": "pyrmosaic_Pcp4_z2.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 2,
+            "file_name": "pyrmosaic_Anti-SETBP1_z2.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 2,
+            "file_name": "pyrmosaic_Snap25_z2.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 2,
+            "file_name": "pyrmosaic_hSETBP1_z2.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 2,
+            "file_name": "pyrmosaic_TAG_z2.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 2,
+            "file_name": "pyrmosaic_Ttr_z2.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 2,
+            "file_name": "pyrmosaic_PolyT_z2.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 2,
+            "file_name": "pyrmosaic_DAPI_z2.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 3,
+            "file_name": "pyrmosaic_Pcp4_z3.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 3,
+            "file_name": "pyrmosaic_Anti-SETBP1_z3.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 3,
+            "file_name": "pyrmosaic_Snap25_z3.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 3,
+            "file_name": "pyrmosaic_hSETBP1_z3.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 3,
+            "file_name": "pyrmosaic_TAG_z3.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 3,
+            "file_name": "pyrmosaic_Ttr_z3.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 3,
+            "file_name": "pyrmosaic_PolyT_z3.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 3,
+            "file_name": "pyrmosaic_DAPI_z3.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 4,
+            "file_name": "pyrmosaic_Pcp4_z4.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 4,
+            "file_name": "pyrmosaic_Anti-SETBP1_z4.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 4,
+            "file_name": "pyrmosaic_Snap25_z4.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 4,
+            "file_name": "pyrmosaic_hSETBP1_z4.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 4,
+            "file_name": "pyrmosaic_TAG_z4.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 4,
+            "file_name": "pyrmosaic_Ttr_z4.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 4,
+            "file_name": "pyrmosaic_PolyT_z4.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 4,
+            "file_name": "pyrmosaic_DAPI_z4.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 5,
+            "file_name": "pyrmosaic_Pcp4_z5.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 5,
+            "file_name": "pyrmosaic_Anti-SETBP1_z5.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 5,
+            "file_name": "pyrmosaic_Snap25_z5.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 5,
+            "file_name": "pyrmosaic_hSETBP1_z5.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 5,
+            "file_name": "pyrmosaic_TAG_z5.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 5,
+            "file_name": "pyrmosaic_Ttr_z5.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 5,
+            "file_name": "pyrmosaic_PolyT_z5.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 5,
+            "file_name": "pyrmosaic_DAPI_z5.tif"
+        },
+        {
+            "stain": "Pcp4",
+            "z": 6,
+            "file_name": "pyrmosaic_Pcp4_z6.tif"
+        },
+        {
+            "stain": "Anti-SETBP1",
+            "z": 6,
+            "file_name": "pyrmosaic_Anti-SETBP1_z6.tif"
+        },
+        {
+            "stain": "Snap25",
+            "z": 6,
+            "file_name": "pyrmosaic_Snap25_z6.tif"
+        },
+        {
+            "stain": "hSETBP1",
+            "z": 6,
+            "file_name": "pyrmosaic_hSETBP1_z6.tif"
+        },
+        {
+            "stain": "TAG",
+            "z": 6,
+            "file_name": "pyrmosaic_TAG_z6.tif"
+        },
+        {
+            "stain": "Ttr",
+            "z": 6,
+            "file_name": "pyrmosaic_Ttr_z6.tif"
+        },
+        {
+            "stain": "PolyT",
+            "z": 6,
+            "file_name": "pyrmosaic_PolyT_z6.tif"
+        },
+        {
+            "stain": "DAPI",
+            "z": 6,
+            "file_name": "pyrmosaic_DAPI_z6.tif"
+        }
+    ]
+}
