@@ -11,6 +11,7 @@
 *.tif
 
 Archive/
+**/Archive/
 202504111150_Sessa-p0-p7_VMSC10702/
 202503071102_SESSA-p30-E165_VMSC10702/
 data_check/
