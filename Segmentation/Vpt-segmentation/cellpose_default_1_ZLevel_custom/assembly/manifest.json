@@ -1,0 +1,17 @@
+{
+    "Datasets": [
+        "resegmented.vzg2"
+    ],
+    "FeatureSets": [
+        "ROI"
+    ],
+    "Linkages": {
+        "ROI": {
+        },
+        "cell": {
+        }
+    },
+    "Name": "assembly",
+    "Type": "Experiment",
+    "Version": "2.1.0"
+}
