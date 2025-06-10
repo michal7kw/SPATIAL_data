@@ -5,6 +5,14 @@ import re
 import os
 import sys
 
+
+SEL_REGION = "2"
+REGION = f"R{SEL_REGION}"
+SEL_PATCHES = "input.csv"
+# DATA_PATH = "/beegfs/scratch/ric.broccoli/kubacki.michal/SPATIAL_data/data_p0-p7"
+DATA_PATH = "/beegfs/scratch/ric.broccoli/kubacki.michal/SPATIAL_data/data_p30-E165"
+OUTPUT_DIR = "/beegfs/scratch/ric.broccoli/kubacki.michal/SPATIAL_data/Segmentation/Vpt-segmentation/image_patches"
+
 def parse_csv_row(row):
     """Parse a row from the CSV to extract filename, size, x, and y values."""
     # Split by commas and strip whitespace
@@ -22,7 +30,7 @@ def parse_csv_row(row):
     
     return filename, params
 
-def run_vpt_command(filename, size, x, y, data_path="./"):
+def run_vpt_command(filename, size, x, y):
     """Construct and run the vpt command with the given parameters."""
     
     # Extract the base name without extension for the output file
@@ -35,9 +43,9 @@ def run_vpt_command(filename, size, x, y, data_path="./"):
         "--verbose",
         "--log-level", "1",
         "extract-image-patch",
-        "--input-images", f"{data_path}/R1/images/",
-        "--input-micron-to-mosaic", f"{data_path}/R1/images/micron_to_mosaic_pixel_transform.csv",
-        "--output-patch", f"analysis_outputs/{output_filename}",
+        "--input-images", f"{DATA_PATH}/{REGION}/images/",
+        "--input-micron-to-mosaic", f"{DATA_PATH}/{REGION}/images/micron_to_mosaic_pixel_transform.csv",
+        "--output-patch", os.path.join(OUTPUT_DIR, output_filename),
         "--center-x", str(x),
         "--center-y", str(y),
         "--size-x", str(size),
@@ -54,32 +62,30 @@ def run_vpt_command(filename, size, x, y, data_path="./"):
     
     # Run the command
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)  # shell=False is default and safer
         if result.returncode == 0:
             print(f"✓ Successfully processed {filename}")
         else:
             print(f"✗ Error processing {filename}")
-            print(f"  Error output: {result.stderr}")
+            print(f"  Error output (stderr): {result.stderr}")
+            print(f"  Output (stdout): {result.stdout}")
     except Exception as e:
         print(f"✗ Failed to run command for {filename}: {str(e)}")
 
 def main():
-    # Configuration
-    input_csv = "input.csv"
-    data_path = os.environ.get("DATA_PATH", "./")  # Use DATA_PATH env var or current directory
     
     # Create output directory if it doesn't exist
-    os.makedirs("analysis_outputs", exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     
     # Check if input CSV exists
-    if not os.path.exists(input_csv):
-        print(f"Error: {input_csv} not found!")
+    if not os.path.exists(SEL_PATCHES):
+        print(f"Error: {SEL_PATCHES} not found!")
         sys.exit(1)
     
     # Process each row in the CSV
-    print(f"Processing entries from {input_csv}...")
+    print(f"Processing entries from {SEL_PATCHES}...")
     
-    with open(input_csv, 'r') as f:
+    with open(SEL_PATCHES, 'r') as f:
         for line_num, line in enumerate(f, 1):
             line = line.strip()
             if not line:  # Skip empty lines
@@ -94,7 +100,7 @@ def main():
                     continue
                 
                 # Run the command
-                run_vpt_command(filename, params['size'], params['x'], params['y'], data_path)
+                run_vpt_command(filename, params['size'], params['x'], params['y'])
                 
             except Exception as e:
                 print(f"Error processing line {line_num}: {str(e)}")
