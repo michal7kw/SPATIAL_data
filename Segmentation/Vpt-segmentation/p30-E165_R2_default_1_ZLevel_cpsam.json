@@ -1,61 +1,25 @@
 {
   "experiment_properties": {
-    "all_z_indexes": [
-      0,
-      1,
-      2,
-      3,
-      4,
-      5,
-      6
-    ],
-    "z_positions_um": [
-      1.5,
-      3,
-      4.5,
-      6,
-      7.5,
-      9,
-      10.5
-    ]
+    "all_z_indexes": [0, 1, 2, 3, 4, 5, 6],
+    "z_positions_um": [1.5, 3, 4.5, 6, 7.5, 9, 10.5]
   },
   "segmentation_tasks": [
     {
       "task_id": 0,
-      "segmentation_family": "Cellpose2",
+      "segmentation_family": "Cellpose",
       "entity_types_detected": [
         "cell"
       ],
       "z_layers": [
-        6
+        3
       ],
       "segmentation_properties": {
-        "model": "cyto2",
+        "model": null,
         "model_dimensions": "2D",
-        "custom_weights": null,
-        "channel_map": {
-          "red": "Snap25",
-          "green": "PolyT",
-          "blue": "DAPI"
-        }
+        "custom_weights": "cpsam",
+        "version": "latest"
       },
       "task_input_data": [
-        {
-          "image_channel": "Snap25",
-          "image_preprocessing": [
-            {
-              "name": "normalize",
-              "parameters": {
-                "type": "CLAHE",
-                "clip_limit": 0.01,
-                "filter_size": [
-                  10,
-                  10
-                ]
-              }
-            }
-          ]
-        },
         {
           "image_channel": "PolyT",
           "image_preprocessing": [
@@ -65,8 +29,8 @@
                 "type": "CLAHE",
                 "clip_limit": 0.01,
                 "filter_size": [
-                  10,
-                  10
+                  100,
+                  100
                 ]
               }
             }
@@ -81,8 +45,8 @@
                 "type": "CLAHE",
                 "clip_limit": 0.01,
                 "filter_size": [
-                  10,
-                  10
+                  100,
+                  100
                 ]
               }
             }
@@ -91,15 +55,62 @@
       ],
       "segmentation_parameters": {
         "nuclear_channel": "DAPI",
-        "entity_fill_channel": "all",
+        "entity_fill_channel": "PolyT",
         "diameter": 70,
         "flow_threshold": 0.95,
-        "cellprob_threshold": -5.5,
-        "minimum_mask_size": 500
+        "mask_threshold": -5.5,
+        "min_size": 500
       },
       "polygon_parameters": {
-        "simplification_tol": 0,
-        "smoothing_radius": 0,
+        "simplification_tol": 0.0,
+        "smoothing_radius": 0.0,
+        "minimum_final_area": 500
+      }
+    },
+    {
+      "task_id": 1,
+      "segmentation_family": "Cellpose",
+      "entity_types_detected": [
+        "cell"
+      ],
+      "z_layers": [
+        3
+      ],
+      "segmentation_properties": {
+        "model": "nuclei",
+        "model_dimensions": "2D",
+        "custom_weights": null,
+        "version": "latest"
+      },
+      "task_input_data": [
+        {
+          "image_channel": "DAPI",
+          "image_preprocessing": [
+            {
+              "name": "normalize",
+              "parameters": {
+                "type": "CLAHE",
+                "clip_limit": 0.01,
+                "filter_size": [
+                  100,
+                  100
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "segmentation_parameters": {
+        "nuclear_channel": "DAPI",
+        "entity_fill_channel": null,
+        "diameter": 55,
+        "flow_threshold": 0.8,
+        "mask_threshold": -3,
+        "min_size": 500
+      },
+      "polygon_parameters": {
+        "simplification_tol": 0.0,
+        "smoothing_radius": 0.0,
         "minimum_final_area": 500
       }
     }
@@ -117,7 +128,7 @@
         "cell"
       ],
       "files": {
-        "run_on_tile_dir": "result_tiles/",
+        "run_on_tile_dir": "result_tiles",
         "mosaic_geometry_file": "cellpose_mosaic_space.parquet",
         "micron_geometry_file": "cellpose_micron_space.parquet",
         "cell_metadata_file": "cellpose_cell_metadata.csv"
