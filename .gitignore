@@ -24,3 +24,6 @@ Segmentation/Vpt-segmentation/vzg_build_temp
 models/
 Segmentation/Vpt-segmentation/cpsam
 __pycache__
+Segmentation/resegment_ROI_workflow/vzg_build_temp/
+Segmentation/Vpt-segmentation/image_patches/old/
+*.npy

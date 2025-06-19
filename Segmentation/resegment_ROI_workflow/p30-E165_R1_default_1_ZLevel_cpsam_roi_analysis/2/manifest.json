@@ -1,0 +1,17 @@
+{
+    "Datasets": [
+        "p30-E165_R1_roi_resegmented.vzg2"
+    ],
+    "FeatureSets": [
+        "ROI"
+    ],
+    "Linkages": {
+        "ROI": {
+        },
+        "cell": {
+        }
+    },
+    "Name": "2",
+    "Type": "Experiment",
+    "Version": "2.1.0"
+}
